@@ -5,6 +5,7 @@ import (
 	"anti-validators/wavesapi"
 	"context"
 	"fmt"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -12,12 +13,12 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func StartWavesCacher(contractAddress string, nodeUrl string, ctx context.Context, db *gorm.DB) {
+func StartWavesCacher(contractAddress string, nodeUrl string, rqTimeout int, blockTimeout int, ctx context.Context, db *gorm.DB) {
 	var nodeClient = wavesapi.New(nodeUrl, "")
 
 	go func() {
 		for true {
-			err := handleWavesState(nodeClient, contractAddress, db)
+			err := handleWavesState(nodeClient, rqTimeout, blockTimeout, contractAddress, db)
 			if err != nil {
 				fmt.Printf("Error: %s \n", err.Error())
 			}
@@ -32,23 +33,33 @@ func StartWavesCacher(contractAddress string, nodeUrl string, ctx context.Contex
 	}()
 }
 
-func handleWavesState(nodeClient *wavesapi.Node, contractAddress string, db *gorm.DB) error {
+func handleWavesState(nodeClient *wavesapi.Node, rqTimeout int, blockTimeout int, contractAddress string, db *gorm.DB) error {
 	state, err := nodeClient.GetStateByAddress(contractAddress)
 	if err != nil {
 		return err
 	}
+	height, err := nodeClient.GetHeight()
+	if err != nil {
+		return err
+	}
 
-	for key, value := range state {
-		if !strings.HasPrefix(key, "status_") {
+	lastElement := state["last_element"]
+	orderId := lastElement.Value.(string)
+	for {
+		rqHeight := int(state["height_"+orderId].Value.(float64))
+		if rqHeight > height-blockTimeout {
 			continue
 		}
 
-		id := strings.Split(key, "_")[1]
+		if height > rqHeight+rqTimeout {
+			break
+		}
 
 		var dbRq models.Request
-		db.Where(&models.Request{Id: id}).First(&dbRq)
+		db.Where(&models.Request{Id: orderId}).First(&dbRq)
+
+		status := models.Status(state["status_"+orderId].Value.(float64))
 		if dbRq.Id != "" {
-			status := models.Status(state["status_"+id].Value.(float64))
 			if dbRq.Status != status {
 				dbRq.Status = status
 				if err := db.Save(&dbRq).Error; err != nil {
@@ -58,24 +69,28 @@ func handleWavesState(nodeClient *wavesapi.Node, contractAddress string, db *gor
 			continue
 		}
 
-		if value.Value.(float64) != float64(models.New) {
-			continue
-		}
-		strAmount := strconv.FormatFloat(state["amount_"+id].Value.(float64), 'f', 5, 64)
+		strAmount := strconv.FormatFloat(state["amount_"+orderId].Value.(float64), 'f', 5, 64)
+		bigAmount := big.NewInt(0)
+		bigAmount.SetString(strAmount, 10)
 		req := models.Request{
-			Id:        id,
-			CreatedAt: int32(state["height_"+id].Value.(float64)),
-			Status:    models.New,
-			Owner:     state["owner_"+id].Value.(string),
-			Target:    state["target_"+id].Value.(string),
-			Amount:    strAmount,
+			Id:        orderId,
+			CreatedAt: int32(rqHeight),
+			Status:    status,
+			Owner:     state["owner_"+orderId].Value.(string),
+			Target:    strings.ToLower(state["target_"+orderId].Value.(string)),
+			Amount:    bigAmount.String(),
 			ChainType: models.Waves,
-			Type:      models.RequestType(state["type_"+id].Value.(float64)),
+			Type:      models.RequestType(state["type_"+orderId].Value.(float64)),
 			Signs:     nil,
+			AssetId:   state["erc20_address_"+orderId].Value.(string),
 		}
 		if err := db.Save(req).Error; err != nil {
 			return err
 		}
+
+		prevOrder := state["prev_rq_"+orderId]
+		orderId = prevOrder.Value.(string)
 	}
+	db.Where("chain_type = ?", models.Waves).Where("create_at <= ?", height-rqTimeout).Update("status", models.Rejected)
 	return nil
 }

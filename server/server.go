@@ -10,11 +10,12 @@ import (
 )
 
 var validatorDb *gorm.DB
-var oracleAddress string
+var wavesOracleAddress, ethOracleAddress string
 
-func StartServer(host string, oracle string, db *gorm.DB) {
+func StartServer(host string, newWavesOracleAddress string, newEthOracleAddress string, db *gorm.DB) {
 	validatorDb = db
-	oracleAddress = oracle
+	wavesOracleAddress = newWavesOracleAddress
+	ethOracleAddress = newEthOracleAddress
 	for {
 		http.HandleFunc("/api/signs/", handleGetSign)
 		http.ListenAndServe(host, nil)
@@ -30,9 +31,23 @@ func handleGetSign(w http.ResponseWriter, r *http.Request) {
 	}
 
 	reqeustHash := keys[0]
+
+	var rq models.Request
+
+	if err := validatorDb.Where(&models.Request{Id: reqeustHash}).First(&rq).Error; err != nil {
+		http.Error(w, err.Error(), 400)
+		return
+	}
+
+	oracle := ""
+	if rq.ChainType == models.Ethereum {
+		oracle = ethOracleAddress
+	} else {
+		oracle = wavesOracleAddress
+	}
+
 	var sign models.Signs
-	err := validatorDb.Where(&models.Signs{ValidatorAddress: oracleAddress, RequestId: reqeustHash}).Find(&sign).Error
-	if err != nil {
+	if err := validatorDb.Where(&models.Signs{ValidatorAddress: oracle, RequestId: reqeustHash}).Find(&sign).Error; err != nil {
 		http.Error(w, err.Error(), 400)
 		return
 	}

@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/jinzhu/gorm"
@@ -19,11 +20,10 @@ import (
 
 const (
 	defaultConfigFileName = "config.json"
-	defaultHost           = "127.0.0.1:8080"
 )
 
-func openDb() *gorm.DB {
-	db, err := gorm.Open("sqlite3", "anti.db")
+func openDb(dbName string) *gorm.DB {
+	db, err := gorm.Open("sqlite3", dbName)
 	if err != nil {
 		fmt.Println(err.Error())
 		panic("failed to connect database")
@@ -35,15 +35,11 @@ func openDb() *gorm.DB {
 }
 
 func main() {
-	db := openDb()
-	defer db.Close()
 
 	ctx := context.Background()
 
-	var host, confFileName, oracleAddress string
+	var confFileName string
 	flag.StringVar(&confFileName, "config", defaultConfigFileName, "set host")
-	flag.StringVar(&oracleAddress, "oracleAddress", "", "set oracle address")
-	flag.StringVar(&host, "host", defaultHost, "set host")
 	flag.Parse()
 
 	cfg, err := config.Load(confFileName)
@@ -51,19 +47,23 @@ func main() {
 		panic(err)
 	}
 
+	cfg.Ethereum.OracleAddress = strings.ToLower(cfg.Ethereum.OracleAddress)
+
+	db := openDb(cfg.Db)
+	defer db.Close()
 	//---------
 
-	go server.StartServer(host, oracleAddress, db)
+	go server.StartServer(cfg.Host, cfg.Waves.OracleAddress, cfg.Ethereum.OracleAddress, db)
 
-	if err := cacher.StartEthCacher(cfg.Ethereum.ContractAddress, cfg.Ethereum.NodeURL, ctx, db); err != nil {
+	if err := cacher.StartEthCacher(cfg.Ethereum.ContractAddress, cfg.Ethereum.NodeURL, int64(cfg.RqTimeout), int64(cfg.Ethereum.BlockInterval), ctx, db); err != nil {
 		panic(err)
 	}
-	cacher.StartWavesCacher(cfg.Waves.ContractAddress, cfg.Waves.NodeURL, ctx, db)
+	cacher.StartWavesCacher(cfg.Waves.ContractAddress, cfg.Waves.NodeURL, cfg.RqTimeout, cfg.Waves.BlockInterval, ctx, db)
 
-	if err := signer.StartWavesSigner(cfg, oracleAddress, ctx, db); err != nil {
+	if err := signer.StartWavesSigner(cfg, cfg.Waves.OracleAddress, ctx, db); err != nil {
 		panic(err)
 	}
-	if err := signer.StartEthSigner(cfg, oracleAddress, ctx, db); err != nil {
+	if err := signer.StartEthSigner(cfg, cfg.Ethereum.OracleAddress, ctx, db); err != nil {
 		panic(err)
 	}
 	//---------
