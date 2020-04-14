@@ -3,7 +3,7 @@ package main
 import (
 	"anti-validators/cacher"
 	"anti-validators/config"
-	"anti-validators/db/models"
+	"anti-validators/models"
 	"anti-validators/server"
 	"anti-validators/signer"
 	"context"
@@ -60,10 +60,7 @@ func main() {
 	}
 	cacher.StartWavesCacher(cfg.Waves.ContractAddress, cfg.Waves.NodeURL, cfg.RqTimeout, cfg.Waves.BlockInterval, ctx, db)
 
-	if err := signer.StartWavesSigner(cfg, cfg.Waves.OracleAddress, ctx, db); err != nil {
-		panic(err)
-	}
-	if err := signer.StartEthSigner(cfg, cfg.Ethereum.OracleAddress, ctx, db); err != nil {
+	if err := signer.StartSigner(cfg, cfg.Ethereum.OracleAddress, cfg.Waves.OracleAddress, ctx, db); err != nil {
 		panic(err)
 	}
 	//---------

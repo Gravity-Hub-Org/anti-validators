@@ -1,7 +1,7 @@
 package config
 
 import (
-	"anti-validators/db/models"
+	"anti-validators/models"
 	"encoding/json"
 	"io/ioutil"
 )

@@ -2,8 +2,7 @@ package converter
 
 import "math/big"
 
-// TODO: Ref to number
-func StrConvert(amount string, fromDecimals int, toDecimals int) string {
+func ConvertStrAmount(amount string, fromDecimals uint8, toDecimals uint8) string {
 	bigAmount := big.NewInt(0)
 	bigAmount.SetString(amount, 10)
 

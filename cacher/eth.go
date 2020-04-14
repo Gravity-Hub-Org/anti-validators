@@ -2,7 +2,7 @@ package cacher
 
 import (
 	"anti-validators/contracts"
-	"anti-validators/db/models"
+	"anti-validators/models"
 	"context"
 	"fmt"
 	"strings"
@@ -107,16 +107,17 @@ func handleEthLogs(contract *contracts.Supersymmetry, client *ethclient.Client, 
 		}
 
 		req := models.Request{
-			Id:        hexutil.Encode(logs.Event.RequestHash[:]),
-			CreatedAt: int32(request.Height.Int64()),
-			Status:    status,
-			Amount:    request.TokenAmount.String(),
-			Owner:     strings.ToLower(request.Owner.Hex()),
-			Target:    request.Target,
-			ChainType: models.Ethereum,
-			Type:      models.RequestType(request.RType),
-			AssetId:   request.TokenAddress.String(),
-			Signs:     nil,
+			Id:              hexutil.Encode(logs.Event.RequestHash[:]),
+			CreatedAt:       int32(request.Height.Int64()),
+			Status:          status,
+			Amount:          request.TokenAmount.String(),
+			Owner:           strings.ToLower(request.Owner.Hex()),
+			Target:          request.Target,
+			ChainType:       models.Ethereum,
+			Type:            models.RqType(request.RType),
+			AssetId:         request.TokenAddress.String(),
+			Signs:           nil,
+			TargetRequestId: request.TargetRqId,
 		}
 		if err := db.Save(req).Error; err != nil {
 			return err

@@ -31,7 +31,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.2.0 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.2.0 // indirect
 	github.com/multiformats/go-multistream v0.1.1 // indirect
-	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d
+	github.com/syndtr/goleveldb v1.0.1-0.20190923125748-758128399b1d // indirect
 	github.com/wavesplatform/gowaves v0.3.0 // indirect
 	github.com/whyrusleeping/go-smux-multistream v2.0.2+incompatible // indirect
 	gopkg.in/reform.v1 v1.3.3 // indirect

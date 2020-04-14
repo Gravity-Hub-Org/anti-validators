@@ -1,7 +1,7 @@
 package cacher
 
 import (
-	"anti-validators/db/models"
+	"anti-validators/models"
 	"anti-validators/wavesapi"
 	"context"
 	"fmt"
@@ -73,16 +73,17 @@ func handleWavesState(nodeClient *wavesapi.Node, rqTimeout int, blockTimeout int
 		bigAmount := big.NewInt(0)
 		bigAmount.SetString(strAmount, 10)
 		req := models.Request{
-			Id:        orderId,
-			CreatedAt: int32(rqHeight),
-			Status:    status,
-			Owner:     state["owner_"+orderId].Value.(string),
-			Target:    strings.ToLower(state["target_"+orderId].Value.(string)),
-			Amount:    bigAmount.String(),
-			ChainType: models.Waves,
-			Type:      models.RequestType(state["type_"+orderId].Value.(float64)),
-			Signs:     nil,
-			AssetId:   state["erc20_address_"+orderId].Value.(string),
+			Id:              orderId,
+			CreatedAt:       int32(rqHeight),
+			Status:          status,
+			Owner:           state["owner_"+orderId].Value.(string),
+			Target:          strings.ToLower(state["target_"+orderId].Value.(string)),
+			Amount:          bigAmount.String(),
+			ChainType:       models.Waves,
+			Type:            models.RqType(state["type_"+orderId].Value.(float64)),
+			Signs:           nil,
+			AssetId:         state["erc20_address_"+orderId].Value.(string),
+			TargetRequestId: state["target_rq_id"+orderId].Value.(string),
 		}
 		if err := db.Save(req).Error; err != nil {
 			return err

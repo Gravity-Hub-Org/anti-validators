@@ -1,7 +1,7 @@
 package server
 
 import (
-	"anti-validators/db/models"
+	"anti-validators/models"
 	"encoding/json"
 	"fmt"
 	"net/http"
