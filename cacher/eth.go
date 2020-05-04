@@ -123,6 +123,6 @@ func handleEthLogs(contract *contracts.Supersymmetry, client *ethclient.Client, 
 			return err
 		}
 	}
-	db.Where("chain_type = ?", models.Ethereum).Where("create_at <= ?", height.Number.Int64()-rqTimeout).Update("status", models.Rejected)
+	db.Model(&models.Request{}).Where("chain_type = ?", models.Ethereum).Where("created_at <= ?", height.Number.Int64()-rqTimeout).Update("status", models.Rejected)
 	return nil
 }

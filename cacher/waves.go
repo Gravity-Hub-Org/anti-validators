@@ -82,7 +82,7 @@ func handleWavesState(nodeClient *wavesapi.Node, rqTimeout int, blockTimeout int
 			ChainType:       models.Waves,
 			Type:            models.RqType(state["type_"+orderId].Value.(float64)),
 			Signs:           nil,
-			AssetId:         state["erc20_address_"+orderId].Value.(string),
+			AssetId:         state["asset_id_"+orderId].Value.(string),
 			TargetRequestId: state["target_rq_id"+orderId].Value.(string),
 		}
 		if err := db.Save(req).Error; err != nil {
@@ -92,6 +92,6 @@ func handleWavesState(nodeClient *wavesapi.Node, rqTimeout int, blockTimeout int
 		prevOrder := state["prev_rq_"+orderId]
 		orderId = prevOrder.Value.(string)
 	}
-	db.Where("chain_type = ?", models.Waves).Where("create_at <= ?", height-rqTimeout).Update("status", models.Rejected)
+	db.Model(&models.Request{}).Where("chain_type = ?", models.Ethereum).Where("created_at <= ?", height-rqTimeout).Update("status", models.Rejected)
 	return nil
 }

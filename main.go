@@ -35,7 +35,6 @@ func openDb(dbName string) *gorm.DB {
 }
 
 func main() {
-
 	ctx := context.Background()
 
 	var confFileName string

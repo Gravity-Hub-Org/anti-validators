@@ -2,8 +2,8 @@ package models
 
 type ChainType int
 const (
-	Waves ChainType = iota
-	Ethereum
+	Ethereum ChainType = iota
+	Waves
 )
 
 type Status int

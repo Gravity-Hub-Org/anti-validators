@@ -15,7 +15,6 @@ type Config struct {
 	Timeout         int
 	RqTimeout       int
 	Ips             []string
-	ApproveNewToken []ApproveRqToken
 }
 
 type ApproveRqToken struct {

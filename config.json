@@ -4,21 +4,21 @@
   "Waves": {
     "NodeURL": "http://127.0.0.1:6869",
     "ApiKey": "waves-private-node",
-    "ContractAddress": "3MLphe2mrFFWukyNDwe1Ps18t6xoMfG41N3",
-    "BlockInterval": 1,
+    "ContractAddress": "3M432xfvJW6C4ZCT1Uv49xhasDLLNYYbsyt",
+    "BlockInterval": 0,
     "OracleAddress": "3M4qwDomRabJKLZxuXhwfqLApQkU592nWxF"
   },
   "Ethereum": {
-    "NodeURL": "https://kovan.infura.io/v3/598efca7168947c6a186e2f85b600be1",
-    "ContractAddress": "0x6D8dE1a5384CA68eb525707D9b5b49e63A3e62Ed",
-    "PrivateKey": "0xaf3244976ade3c5ff0cdd73e467acad292acb9d0e9c02413548db8ad9ddc51de",
-    "BlockInterval": 1,
-    "OracleAddress": "0x25513f13e9a69dcf2925BDfcED50C13709554358"
+    "NodeURL": "http://127.0.0.1:9545",
+    "ContractAddress": "0x7C3197767d128216543B84a6a81D8901A4E097B3",
+    "PrivateKey": "0x8065ad086c49552a4fea96a335315d1e21e934a94deebefdab29e3fa20d124bd",
+    "BlockInterval": 0,
+    "OracleAddress": "0xd4a384d168fdbc3172dc43c0b5a15ded626898a6"
   },
-  "BftCoefficient": 2,
-  "RqTimeout": 2,
-  "Timeout": 5,
+  "BftCoefficient": 1,
+  "RqTimeout": 30,
+  "Timeout": 1,
   "Ips": [
-    "http://127.0.0.1:8081"
+    "http://127.0.0.1:8080"
   ]
 }

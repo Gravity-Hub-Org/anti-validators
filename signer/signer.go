@@ -3,7 +3,6 @@ package signer
 import (
 	"anti-validators/config"
 	"anti-validators/contracts"
-	"anti-validators/converter"
 	"anti-validators/models"
 	"anti-validators/wavesapi"
 	"context"
@@ -144,7 +143,12 @@ func signRequest(wavesClient *wavesapi.Node, wavesContractAddress string, ethCon
 			toDecimals = uint8(wavesContractState["asset_decimals_"+tokenFrom.AssetId].Value.(float64))
 		} else if request.ChainType == models.Waves {
 			ercAddress := wavesContractState["erc20_address_"+request.AssetId].Value.(string)
-			if request.AssetId != ercAddress {
+			tokenTo, err := ethContract.Tokens(nil, common.HexToAddress(ercAddress))
+			if err != nil || tokenTo.Status != uint8(models.Success) {
+				continue
+			}
+
+			if request.AssetId != tokenTo.AssetId {
 				continue
 			}
 			status := uint8(wavesContractState["asset_status_"+request.AssetId].Value.(float64))
@@ -152,17 +156,8 @@ func signRequest(wavesClient *wavesapi.Node, wavesContractAddress string, ethCon
 				continue
 			}
 
-			tokenTo, err := ethContract.Tokens(nil, common.HexToAddress(ercAddress))
-			if err != nil || tokenTo.Status != uint8(models.Success) {
-				continue
-			}
-
 			toDecimals = tokenTo.Decimals
 			fromDecimals = uint8(wavesContractState["asset_decimals_"+request.AssetId].Value.(float64))
-		}
-
-		if !isValidOut(request, fromDecimals, toDecimals, db) {
-			continue
 		}
 
 		status := models.Success
@@ -200,44 +195,6 @@ func signRequest(wavesClient *wavesapi.Node, wavesContractAddress string, ethCon
 		}
 	}
 	return nil
-}
-
-func isValidOut(request models.Request, fromDecimals uint8, toDecimals uint8, db *gorm.DB) bool {
-	if request.Type == models.Burn || request.Type == models.Lock {
-		return true
-	}
-
-	var inputChainType models.ChainType
-	if request.ChainType == models.Ethereum {
-		inputChainType = models.Waves
-	} else if request.ChainType == models.Waves {
-		inputChainType = models.Ethereum
-	}
-
-	var inputRqType models.RqType
-	if request.Type == models.Mint {
-		inputRqType = models.Lock
-	} else if request.Type == models.Unlock {
-		inputRqType = models.Burn
-	}
-
-	var inputRequest models.Request
-	db.Where(&models.Request{Id: request.TargetRequestId, Target: strings.ToLower(request.Owner), ChainType: inputChainType,
-		Amount: converter.ConvertStrAmount(request.Amount, fromDecimals, toDecimals),
-		Type:   inputRqType, Owner: request.Target, Status: models.Success}).First(&inputRequest)
-
-	if inputRequest.Id != request.TargetRequestId {
-		return false
-	}
-
-	var outSuccessRequests []models.Request
-	db.Where(&models.Request{TargetRequestId: request.TargetRequestId, Status: models.Success}).Where("chain_type = ?", request.ChainType).Find(&outSuccessRequests)
-
-	if len(outSuccessRequests) != 0 {
-		return false
-	}
-
-	return true
 }
 
 func getSigns(ips []string, db *gorm.DB) error {
