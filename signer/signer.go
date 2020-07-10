@@ -122,8 +122,6 @@ func signRequest(wavesClient *wavesapi.Node, wavesContractAddress string, ethCon
 			continue
 		}
 
-		var fromDecimals uint8
-		var toDecimals uint8
 		if request.ChainType == models.Ethereum {
 			tokenFrom, err := ethContract.Tokens(nil, common.HexToAddress(request.AssetId))
 			if err != nil || tokenFrom.Status != uint8(models.Success) {
@@ -139,8 +137,6 @@ func signRequest(wavesClient *wavesapi.Node, wavesContractAddress string, ethCon
 				continue
 			}
 
-			fromDecimals = tokenFrom.Decimals
-			toDecimals = uint8(wavesContractState["asset_decimals_"+tokenFrom.AssetId].Value.(float64))
 		} else if request.ChainType == models.Waves {
 			ercAddress := wavesContractState["erc20_address_"+request.AssetId].Value.(string)
 			tokenTo, err := ethContract.Tokens(nil, common.HexToAddress(ercAddress))
@@ -156,8 +152,6 @@ func signRequest(wavesClient *wavesapi.Node, wavesContractAddress string, ethCon
 				continue
 			}
 
-			toDecimals = tokenTo.Decimals
-			fromDecimals = uint8(wavesContractState["asset_decimals_"+request.AssetId].Value.(float64))
 		}
 
 		status := models.Success
